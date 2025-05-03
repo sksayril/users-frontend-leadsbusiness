@@ -1,0 +1,1216 @@
+# Leads Generator Service - API Documentation
+
+## Base URL
+All APIs are prefixed with: `http://localhost:3000/api`
+
+## Authentication
+Most endpoints require JWT token authentication.
+Include the token in the request header:
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## API Endpoints
+
+### Authentication
+
+1. **User Signup**
+   - **Endpoint:** POST /users/signup
+   - **Request Body:**
+     ```json
+     {
+       "name": "John Doe",
+       "email": "john@example.com",
+       "password": "password123",
+       "securityQuestion": "What is your pet's name?",
+       "securityAnswer": "Rex"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "User created successfully",
+       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+       "user": {
+         "id": "60d5ec9acf3b4a2d1c3e7b9a",
+         "name": "John Doe",
+         "email": "john@example.com",
+         "role": "USER"
+       }
+     }
+     ```
+
+2. **Admin Signup**
+   - **Endpoint:** POST /admin/signup
+   - **Request Body:**
+     ```json
+     {
+       "name": "Admin User",
+       "email": "admin@example.com",
+       "password": "adminpassword123",
+       "securityQuestion": "What is your favorite color?",
+       "securityAnswer": "Blue",
+       "adminCode": "ADMIN_SECRET_CODE" // Secret code for admin registration
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Admin created successfully",
+       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+       "user": {
+         "id": "60d5ec9acf3b4a2d1c3e7b9a",
+         "name": "Admin User",
+         "email": "admin@example.com",
+         "role": "ADMIN"
+       }
+     }
+     ```
+   - **Error Response:**
+     ```json
+     {
+       "message": "Invalid admin code"
+     }
+     ```
+
+3. **User Login**
+   - **Endpoint:** POST /users/login
+   - **Request Body:**
+     ```json
+     {
+       "email": "john@example.com",
+       "password": "password123"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Login successful",
+       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+       "user": {
+         "id": "60d5ec9acf3b4a2d1c3e7b9a",
+         "name": "John Doe",
+         "email": "john@example.com",
+         "role": "USER",
+         "wallet": {
+           "balance": 0,
+           "leadsCoins": 0,
+           "transactions": []
+         },
+         "subscription": {
+           "isActive": false
+         }
+       }
+     }
+     ```
+
+4. **Reset Password**
+   - **Endpoint:** POST /users/reset-password
+   - **Request Body:**
+     ```json
+     {
+       "email": "john@example.com",
+       "securityAnswer": "Rex",
+       "newPassword": "newpassword123"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Password reset successful"
+     }
+     ```
+
+5. **Admin Login**
+   - **Endpoint:** POST /admin/login
+   - **Request Body:**
+     ```json
+     {
+       "email": "admin@example.com",
+       "password": "adminpassword"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Login successful",
+       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+       "user": {
+         "id": "60d5ec9acf3b4a2d1c3e7b9a",
+         "name": "Admin User",
+         "email": "admin@example.com",
+         "role": "ADMIN"
+       }
+     }
+     ```
+
+### User APIs
+
+1. **Get User Profile**
+   - **Endpoint:** GET /users/profile
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "user": {
+         "id": "60d5ec9acf3b4a2d1c3e7b9a",
+         "name": "John Doe",
+         "email": "john@example.com",
+         "role": "USER",
+         "wallet": {
+           "balance": 100,
+           "leadsCoins": 200,
+           "transactions": [
+             {
+               "type": "CREDIT",
+               "amount": 100,
+               "coins": 200,
+               "description": "Wallet recharge",
+               "date": "2023-07-15T10:30:00.000Z",
+               "_id": "60d5ec9acf3b4a2d1c3e7b9b"
+             }
+           ]
+         },
+         "subscription": {
+           "isActive": true,
+           "startDate": "2023-07-15T10:30:00.000Z",
+           "endDate": "2023-08-15T10:30:00.000Z",
+           "plan": "MONTHLY"
+         },
+         "createdAt": "2023-07-15T10:30:00.000Z"
+       }
+     }
+     ```
+
+2. **Get Wallet Transactions**
+   - **Endpoint:** GET /users/wallet/transactions
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "balance": 100,
+       "leadsCoins": 200,
+       "transactions": [
+         {
+           "type": "CREDIT",
+           "amount": 100,
+           "coins": 200,
+           "description": "Wallet recharge",
+           "date": "2023-07-15T10:30:00.000Z",
+           "_id": "60d5ec9acf3b4a2d1c3e7b9b"
+         },
+         {
+           "type": "DEBIT",
+           "coins": 1,
+           "description": "Lead purchase",
+           "date": "2023-07-15T11:30:00.000Z",
+           "_id": "60d5ec9acf3b4a2d1c3e7b9c"
+         }
+       ]
+     }
+     ```
+
+### Wallet & Subscription APIs
+
+1. **Create Order for Wallet Recharge**
+   - **Endpoint:** POST /users/wallet/recharge/order
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "amount": 100
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "order": {
+         "id": "order_JEsxYHPEPZ7rkL",
+         "amount": 10000,
+         "currency": "INR",
+         "receipt": "receipt_1234567890"
+       }
+     }
+     ```
+
+2. **Verify Payment and Add Money to Wallet**
+   - **Endpoint:** POST /users/wallet/recharge/verify
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "razorpayOrderId": "order_JEsxYHPEPZ7rkL",
+       "razorpayPaymentId": "pay_JEsxdBHwTxU5FC",
+       "razorpaySignature": "b0ea47c5a34cbd7a8a71c7b0f057a349d984ce89b7271a6a0f6998718d2a827d",
+       "amount": 100
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Payment successful",
+       "wallet": {
+         "balance": 100,
+         "leadsCoins": 200,
+         "transactions": [
+           {
+             "type": "CREDIT",
+             "amount": 100,
+             "coins": 200,
+             "description": "Wallet recharge",
+             "date": "2023-07-15T10:30:00.000Z",
+             "_id": "60d5ec9acf3b4a2d1c3e7b9b"
+           }
+         ]
+       }
+     }
+     ```
+
+3. **Create Order for Subscription**
+   - **Endpoint:** POST /users/subscription/order
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "plan": "MONTHLY"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "order": {
+         "id": "order_JEsxYHPEPZ7rkL",
+         "amount": 39900,
+         "currency": "INR",
+         "receipt": "receipt_1234567890"
+       }
+     }
+     ```
+
+4. **Verify Payment and Activate Subscription**
+   - **Endpoint:** POST /users/subscription/verify
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "razorpayOrderId": "order_JEsxYHPEPZ7rkL",
+       "razorpayPaymentId": "pay_JEsxdBHwTxU5FC",
+       "razorpaySignature": "b0ea47c5a34cbd7a8a71c7b0f057a349d984ce89b7271a6a0f6998718d2a827d"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Subscription activated successfully",
+       "subscription": {
+         "isActive": true,
+         "startDate": "2023-07-15T10:30:00.000Z",
+         "endDate": "2023-08-15T10:30:00.000Z",
+         "plan": "MONTHLY"
+       }
+     }
+     ```
+
+### Leads APIs (User)
+
+1. **Get All Categories**
+   - **Endpoint:** GET /leads/categories
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "categories": [
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+           "name": "Real Estate",
+           "description": "Real Estate leads category",
+           "isActive": true,
+           "createdAt": "2023-07-15T10:30:00.000Z"
+         },
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9e",
+           "name": "Insurance",
+           "description": "Insurance leads category",
+           "isActive": true,
+           "createdAt": "2023-07-15T10:30:00.000Z"
+         }
+       ]
+     }
+     ```
+
+2. **Get Leads Preview by Category**
+   - **Endpoint:** GET /leads/preview/60d5ec9acf3b4a2d1c3e7b9d
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "leads": [
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9f",
+           "customerName": "Alice Smith",
+           "price": 1,
+           "category": {
+             "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+             "name": "Real Estate"
+           }
+         },
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7ba0",
+           "customerName": "Bob Johnson",
+           "price": 1,
+           "category": {
+             "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+             "name": "Real Estate"
+           }
+         }
+       ]
+     }
+     ```
+   - **Error Response (No Subscription):**
+     ```json
+     {
+       "message": "Subscription required",
+       "subscriptionRequired": true
+     }
+     ```
+
+3. **Purchase Lead**
+   - **Endpoint:** POST /leads/purchase/60d5ec9acf3b4a2d1c3e7b9f
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Lead purchased successfully",
+       "lead": {
+         "id": "60d5ec9acf3b4a2d1c3e7b9f",
+         "customerName": "Alice Smith",
+         "customerAddress": "123 Main St, New York, NY",
+         "customerContact": "123-456-7890",
+         "customerEmail": "alice@example.com",
+         "category": "60d5ec9acf3b4a2d1c3e7b9d",
+         "purchaseDate": "2023-07-15T11:30:00.000Z"
+       }
+     }
+     ```
+   - **Error Responses:**
+     ```json
+     {
+       "message": "Subscription required",
+       "subscriptionRequired": true
+     }
+     ```
+     ```json
+     {
+       "message": "Insufficient coins"
+     }
+     ```
+
+4. **Get Purchased Leads**
+   - **Endpoint:** GET /leads/purchased
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "leads": [
+         {
+           "id": "60d5ec9acf3b4a2d1c3e7b9f",
+           "customerName": "Alice Smith",
+           "customerAddress": "123 Main St, New York, NY",
+           "customerContact": "123-456-7890",
+           "customerEmail": "alice@example.com",
+           "category": {
+             "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+             "name": "Real Estate"
+           },
+           "purchaseDate": "2023-07-15T11:30:00.000Z"
+         }
+       ]
+     }
+     ```
+
+5. **Search Leads**
+   - **Endpoint:** GET /leads/search?category=60d5ec9acf3b4a2d1c3e7b9d&query=Smith
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "leads": [
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9f",
+           "customerName": "Alice Smith",
+           "price": 1,
+           "category": {
+             "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+             "name": "Real Estate"
+           }
+         }
+       ]
+     }
+     ```
+
+### Admin APIs
+
+1. **Get Dashboard Stats**
+   - **Endpoint:** GET /admin/dashboard
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "stats": {
+         "totalLeads": 50,
+         "totalCategories": 5,
+         "totalUsers": 20,
+         "purchasedLeads": 15
+       }
+     }
+     ```
+
+2. **Create Category**
+   - **Endpoint:** POST /admin/categories
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "name": "Health Insurance",
+       "description": "Health insurance leads category"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Category created successfully",
+       "category": {
+         "_id": "60d5ec9acf3b4a2d1c3e7ba1",
+         "name": "Health Insurance",
+         "description": "Health insurance leads category",
+         "isActive": true,
+         "createdBy": "60d5ec9acf3b4a2d1c3e7b9a",
+         "createdAt": "2023-07-15T12:30:00.000Z"
+       }
+     }
+     ```
+
+3. **Get All Categories**
+   - **Endpoint:** GET /admin/categories
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "categories": [
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+           "name": "Real Estate",
+           "description": "Real Estate leads category",
+           "isActive": true,
+           "createdBy": "60d5ec9acf3b4a2d1c3e7b9a",
+           "createdAt": "2023-07-15T10:30:00.000Z"
+         },
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9e",
+           "name": "Insurance",
+           "description": "Insurance leads category",
+           "isActive": true,
+           "createdBy": "60d5ec9acf3b4a2d1c3e7b9a",
+           "createdAt": "2023-07-15T10:30:00.000Z"
+         }
+       ]
+     }
+     ```
+
+4. **Update Category**
+   - **Endpoint:** PUT /admin/categories/60d5ec9acf3b4a2d1c3e7b9d
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "name": "Premium Real Estate",
+       "description": "Premium real estate leads category"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Category updated successfully",
+       "category": {
+         "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+         "name": "Premium Real Estate",
+         "description": "Premium real estate leads category",
+         "isActive": true,
+         "createdBy": "60d5ec9acf3b4a2d1c3e7b9a",
+         "createdAt": "2023-07-15T10:30:00.000Z"
+       }
+     }
+     ```
+
+5. **Delete Category**
+   - **Endpoint:** DELETE /admin/categories/60d5ec9acf3b4a2d1c3e7b9d
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Category deleted successfully"
+     }
+     ```
+
+6. **Add Lead**
+   - **Endpoint:** POST /admin/leads
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "customerName": "Charlie Brown",
+       "customerAddress": "456 Oak St, Boston, MA",
+       "customerContact": "987-654-3210",
+       "customerEmail": "charlie@example.com",
+       "website": "www.charliebrown.com",
+       "category": "60d5ec9acf3b4a2d1c3e7b9e"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Lead created successfully",
+       "lead": {
+         "_id": "60d5ec9acf3b4a2d1c3e7ba2",
+         "customerName": "Charlie Brown",
+         "customerAddress": "456 Oak St, Boston, MA",
+         "customerContact": "987-654-3210",
+         "customerEmail": "charlie@example.com",
+         "website": "www.charliebrown.com",
+         "category": "60d5ec9acf3b4a2d1c3e7b9e",
+         "price": 1,
+         "isPurchased": false,
+         "purchasedBy": [],
+         "uploadedBy": "60d5ec9acf3b4a2d1c3e7b9a",
+         "createdAt": "2023-07-15T13:30:00.000Z"
+       }
+     }
+     ```
+
+7. **Get All Leads**
+   - **Endpoint:** GET /admin/leads
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "leads": [
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9f",
+           "customerName": "Alice Smith",
+           "customerAddress": "123 Main St, New York, NY",
+           "customerContact": "123-456-7890",
+           "customerEmail": "alice@example.com",
+           "category": {
+             "_id": "60d5ec9acf3b4a2d1c3e7b9d",
+             "name": "Real Estate"
+           },
+           "price": 1,
+           "isPurchased": true,
+           "purchasedBy": [
+             {
+               "user": "60d5ec9acf3b4a2d1c3e7b9a",
+               "purchaseDate": "2023-07-15T11:30:00.000Z",
+               "_id": "60d5ec9acf3b4a2d1c3e7ba3"
+             }
+           ],
+           "uploadedBy": "60d5ec9acf3b4a2d1c3e7b9a",
+           "createdAt": "2023-07-15T10:30:00.000Z"
+         }
+       ]
+     }
+     ```
+
+8. **Get Leads by Category**
+   - **Endpoint:** GET /admin/leads/category/60d5ec9acf3b4a2d1c3e7b9e
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "leads": [
+         {
+           "_id": "60d5ec9acf3b4a2d1c3e7ba2",
+           "customerName": "Charlie Brown",
+           "customerAddress": "456 Oak St, Boston, MA",
+           "customerContact": "987-654-3210",
+           "customerEmail": "charlie@example.com",
+           "category": {
+             "_id": "60d5ec9acf3b4a2d1c3e7b9e",
+             "name": "Insurance"
+           },
+           "price": 1,
+           "isPurchased": false,
+           "purchasedBy": [],
+           "uploadedBy": "60d5ec9acf3b4a2d1c3e7b9a",
+           "createdAt": "2023-07-15T13:30:00.000Z"
+         }
+       ]
+     }
+     ```
+
+9. **Update Lead**
+   - **Endpoint:** PUT /admin/leads/60d5ec9acf3b4a2d1c3e7ba2
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "customerName": "Charlie Brown Jr",
+       "customerAddress": "456 Oak St, Boston, MA",
+       "customerContact": "987-654-3210",
+       "customerEmail": "charlie.jr@example.com",
+       "category": "60d5ec9acf3b4a2d1c3e7b9e"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "message": "Lead updated successfully",
+       "lead": {
+         "_id": "60d5ec9acf3b4a2d1c3e7ba2",
+         "customerName": "Charlie Brown Jr",
+         "customerAddress": "456 Oak St, Boston, MA",
+         "customerContact": "987-654-3210",
+         "customerEmail": "charlie.jr@example.com",
+         "category": {
+           "_id": "60d5ec9acf3b4a2d1c3e7b9e",
+           "name": "Insurance"
+         },
+         "price": 1,
+         "isPurchased": false,
+         "purchasedBy": [],
+         "uploadedBy": "60d5ec9acf3b4a2d1c3e7b9a",
+         "createdAt": "2023-07-15T13:30:00.000Z"
+       }
+     }
+     ```
+
+10. **Delete Lead**
+    - **Endpoint:** DELETE /admin/leads/60d5ec9acf3b4a2d1c3e7ba2
+    - **Headers:**
+      ```
+      Authorization: Bearer YOUR_JWT_TOKEN
+      ```
+    - **Response:**
+      ```json
+      {
+        "message": "Lead deleted successfully"
+      }
+      ```
+
+11. **Bulk Upload Leads**
+    - **Endpoint:** POST /admin/leads/bulk
+    - **Headers:**
+      ```
+      Authorization: Bearer YOUR_JWT_TOKEN
+      ```
+    - **Request Body:**
+      ```json
+      {
+        "categoryId": "60d5ec9acf3b4a2d1c3e7b9e",
+        "leads": [
+          {
+            "customerName": "David Miller",
+            "customerAddress": "789 Pine St, Chicago, IL",
+            "customerContact": "555-123-4567",
+            "customerEmail": "david@example.com"
+          },
+          {
+            "customerName": "Eva Wilson",
+            "customerAddress": "321 Cedar St, Dallas, TX",
+            "customerContact": "555-987-6543",
+            "customerEmail": "eva@example.com"
+          }
+        ]
+      }
+      ```
+    - **Response:**
+      ```json
+      {
+        "message": "2 leads created successfully",
+        "count": 2
+      }
+      ```
+
+12. **Upload Leads CSV File**
+    - **Endpoint:** POST /admin/leads/upload-csv
+    - **Headers:**
+      ```
+      Authorization: Bearer YOUR_JWT_TOKEN
+      Content-Type: multipart/form-data
+      ```
+    - **Request Body (Form Data):**
+      ```
+      file: [CSV File]
+      categoryId: 60d5ec9acf3b4a2d1c3e7b9e
+      ```
+    - **CSV File Format:**
+      ```
+      customerName,customerContact,customerEmail,website,customerAddress
+      John Smith,1234567890,john@example.com,www.johnsmith.com,"123 Main St, New York, NY"
+      Jane Doe,9876543210,jane@example.com,www.janedoe.com,"456 Oak St, Boston, MA"
+      ```
+    - **Response:**
+      ```json
+      {
+        "message": "2 leads imported successfully",
+        "count": 2,
+        "failures": 0
+      }
+      ```
+    - **Error Response:**
+      ```json
+      {
+        "message": "CSV file is required",
+        "failures": 1,
+        "errors": [
+          {
+            "row": 2,
+            "error": "Missing required field: customerEmail"
+          }
+        ]
+      }
+      ```
+
+### Scraper APIs
+
+1. **Scrape Google Maps Data**
+   - **Endpoint:** POST /scraper/maps
+   - **Description:** Scrapes Google Maps for business data based on a keyword search
+   - **Requires:** Active subscription, 2 LeadsCoins per result found
+   - **Daily Limit:** 8 scrape requests per day
+   - **Result Limit:** Maximum 20 results per scrape
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Request Body:**
+     ```json
+     {
+       "keyword": "restaurants in new york"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+       "success": true,
+       "message": "Successfully scraped 20 results",
+       "data": {
+         "count": 20,
+         "totalCoinsUsed": 40,
+         "coinsPerResult": 2,
+         "remainingToday": 7,
+         "leadsCoinsRemaining": 160
+       }
+     }
+     ```
+   - **Error Responses:**
+     ```json
+     {
+       "success": false,
+       "message": "Daily limit of 8 scrapes reached"
+     }
+     ```
+     ```json
+     {
+       "success": false,
+       "message": "Not enough LeadsCoins. Found 20 results which costs 40 coins (2 coins per result)"
+     }
+     ```
+     ```json
+     {
+       "success": false,
+       "message": "Active subscription required for scraping"
+     }
+     ```
+
+2. **Get Scraper Usage**
+   - **Endpoint:** GET /scraper/usage
+   - **Description:** Gets user's daily scraper usage statistics
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "success": true,
+       "data": {
+         "usedToday": 1,
+         "remainingToday": 7,
+         "lastReset": "2023-10-25T00:00:00.000Z",
+         "costPerScrape": 2,
+         "leadsCoins": 98
+       }
+     }
+     ```
+
+3. **Get Scraper History**
+   - **Endpoint:** GET /scraper/history
+   - **Description:** Gets user's scraping history
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "success": true,
+       "history": [
+         {
+           "id": "6815a10efdc3d8851ad25757",
+           "keyword": "restaurants in new york",
+           "date": "2023-10-25T10:30:00.000Z",
+           "resultCount": 20,
+           "coinsUsed": 40,
+           "scrapeResultId": "6815a10efdc3d8851ad25758"
+         },
+         {
+           "id": "6815a35e34fe85d3b215a501",
+           "keyword": "hotels in chicago",
+           "date": "2023-10-25T11:15:00.000Z",
+           "resultCount": 15,
+           "coinsUsed": 30,
+           "scrapeResultId": "6815a35e34fe85d3b215a502"
+         }
+       ]
+     }
+     ```
+
+4. **Get Scraping Results for Keyword**
+   - **Endpoint:** GET /scraper/results/:keyword
+   - **Description:** Gets scraping results for a specific keyword
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Parameters:**
+     ```
+     keyword - The keyword to get results for (URL encoded)
+     ```
+   - **Response:**
+     ```json
+     {
+       "success": true,
+       "data": [
+         {
+           "title": "Restaurant Name",
+           "link": "https://maps.google.com/...",
+           "website": "https://www.restaurantname.com",
+           "stars": 4.5,
+           "reviews": 123,
+           "phone": "+12124567890",
+           "scrapedAt": "2023-10-25T10:30:00.000Z"
+         },
+         // More results...
+       ]
+     }
+     ```
+   - **Error Response:**
+     ```json
+     {
+       "success": false,
+       "message": "No results found for this keyword or ID"
+     }
+     ```
+
+5. **Get Scraping Results by ID**
+   - **Endpoint:** GET /scraper/results-by-id/:id
+   - **Description:** Gets scraping results using the MongoDB document ID
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Parameters:**
+     ```
+     id - MongoDB ID of the scrape result
+     ```
+   - **Response:**
+     ```json
+     {
+       "success": true,
+       "keyword": "restaurants in new york",
+       "data": [
+         {
+           "title": "Restaurant Name",
+           "link": "https://maps.google.com/...",
+           "website": "https://www.restaurantname.com",
+           "stars": 4.5,
+           "reviews": 123,
+           "phone": "+12124567890",
+           "scrapedAt": "2023-10-25T10:30:00.000Z"
+         },
+         // More results...
+       ]
+     }
+     ```
+   - **Error Response:**
+     ```json
+     {
+       "success": false,
+       "message": "No results found with this ID"
+     }
+     ```
+
+6. **Get All Scraping Results**
+   - **Endpoint:** GET /scraper/all-results
+   - **Description:** Gets a list of all scraping results for the user
+   - **Headers:**
+     ```
+     Authorization: Bearer YOUR_JWT_TOKEN
+     ```
+   - **Response:**
+     ```json
+     {
+       "success": true,
+       "count": 2,
+       "results": [
+         {
+           "id": "6815a35e34fe85d3b215a502",
+           "keyword": "restaurants in new york",
+           "createdAt": "2023-10-25T10:30:00.000Z"
+         },
+         {
+           "id": "6815a42b34fe85d3b215a505",
+           "keyword": "hotels in chicago",
+           "createdAt": "2023-10-25T09:15:00.000Z"
+         }
+       ]
+     }
+     ```
+   - **Error Response:**
+     ```json
+     {
+       "success": false,
+       "message": "No scrape results found"
+     }
+     ```
+
+## Error Responses
+
+- **400 Bad Request**
+  ```json
+  {
+    "message": "Invalid credentials"
+  }
+  ```
+
+- **401 Unauthorized**
+  ```json
+  {
+    "message": "Authentication required"
+  }
+  ```
+
+- **403 Forbidden**
+  ```json
+  {
+    "message": "Admin access required"
+  }
+  ```
+
+- **404 Not Found**
+  ```json
+  {
+    "message": "User not found"
+  }
+  ```
+
+- **500 Server Error**
+  ```json
+  {
+    "message": "Server error"
+  }
+  ```
+
+## API Testing with cURL
+
+### User Signup
+```bash
+curl -X POST http://localhost:3000/api/users/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "securityQuestion": "What is your pet name?",
+    "securityAnswer": "Rex"
+  }'
+```
+
+### User Login
+```bash
+curl -X POST http://localhost:3000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+```
+
+### Get User Profile
+```bash
+curl -X GET http://localhost:3000/api/users/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Create Wallet Recharge Order
+```bash
+curl -X POST http://localhost:3000/api/users/wallet/recharge/order \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 100
+  }'
+```
+
+### Get Leads by Category
+```bash
+curl -X GET http://localhost:3000/api/leads/preview/60d5ec9acf3b4a2d1c3e7b9d \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Admin Signup
+```bash
+curl -X POST http://localhost:3000/api/admin/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "password": "adminpassword123",
+    "securityQuestion": "What is your favorite color?",
+    "securityAnswer": "Blue",
+    "adminCode": "ADMIN_SECRET_CODE"
+  }'
+```
+
+### Upload CSV File
+```bash
+curl -X POST http://localhost:3000/api/admin/leads/upload-csv \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "file=@/path/to/leads.csv" \
+  -F "categoryId=60d5ec9acf3b4a2d1c3e7b9e"
+```
+
+### Scrape Google Maps Data
+```bash
+curl -X POST http://localhost:3000/api/scraper/maps \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "keyword": "restaurants in new york"
+  }'
+```
+
+### Get Scraper Usage
+```bash
+curl -X GET http://localhost:3000/api/scraper/usage \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Get Scraper History
+```bash
+curl -X GET http://localhost:3000/api/scraper/history \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Get Scraping Results for Keyword
+```bash
+curl -X GET http://localhost:3000/api/scraper/results/restaurants%20in%20new%20york \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Get Scraping Results by ID
+```bash
+curl -X GET http://localhost:3000/api/scraper/results-by-id/6815a35e34fe85d3b215a502 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Get All Scraper Results
+```bash
+curl -X GET http://localhost:3000/api/scraper/all-results \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## CSV File Format for Leads Upload
+
+The CSV file for bulk upload should follow this format:
+
+```csv
+customerName,customerContact,customerEmail,website,customerAddress
+John Smith,1234567890,john@example.com,www.johnsmith.com,"123 Main St, New York, NY"
+Jane Doe,9876543210,jane@example.com,www.janedoe.com,"456 Oak St, Boston, MA"
+```
+
+### Required Fields:
+- customerName: Full name of the customer
+- customerContact: Contact phone number
+- customerEmail: Email address
+- customerAddress: Physical address
+
+### Optional Fields:
+- website: Customer's website URL
+
+### Notes:
+1. The first row must contain the field names as shown above
+2. If addresses contain commas, enclose them in double quotes
+3. All required fields must be present for each lead
+4. The categoryId is provided separately as a form field, not in the CSV 
