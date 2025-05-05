@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Wallet, CreditCard, ArrowRight, Lock } from 'lucide-react';
+import { Wallet, CreditCard, ArrowRight, Lock, DollarSign, Globe } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { initRazorpayPayment, loadRazorpay, RazorpaySuccessResponse } from '../../utils/razorpay';
@@ -10,17 +10,26 @@ import { AnimatePresence, motion } from 'framer-motion';
 const RAZORPAY_KEY_ID = "rzp_test_BDT2TegS4Ax6Vp"; // Ideally from env variable
 
 // Recharge amounts in INR
-const rechargeAmounts = [
+const inrRechargeAmounts = [
   { value: 100, coins: 200, label: '₹100', featured: false },
   { value: 250, coins: 500, label: '₹250', featured: true },
   { value: 500, coins: 1000, label: '₹500', featured: false },
   { value: 1000, coins: 2000, label: '₹1000', featured: false },
 ];
 
+// Recharge amounts in USD
+const usdRechargeAmounts = [
+  { value: 5, coins: 200, label: '$5', featured: false },
+  { value: 10, coins: 500, label: '$10', featured: true },
+  { value: 20, coins: 1000, label: '$20', featured: false },
+  { value: 50, coins: 2500, label: '$50', featured: false },
+];
+
 const WalletCard: React.FC = () => {
   const { user } = useAuth();
   const { wallet, subscription, rechargeWallet, verifyRechargePayment, refreshWallet, loading } = useWallet();
   const [selectedAmount, setSelectedAmount] = useState<number>(250);
+  const [selectedCurrency, setSelectedCurrency] = useState<'INR' | 'USD'>('INR');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingMessage, setProcessingMessage] = useState<string>('');
@@ -29,6 +38,15 @@ const WalletCard: React.FC = () => {
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState<boolean>(false);
 
   const isSubscriptionActive = subscription?.isActive || false;
+  
+  // Get the appropriate recharge amounts based on currency
+  const rechargeAmounts = selectedCurrency === 'INR' ? inrRechargeAmounts : usdRechargeAmounts;
+
+  // When currency changes, set a default amount for that currency
+  useEffect(() => {
+    const defaultAmount = selectedCurrency === 'INR' ? 250 : 10;
+    setSelectedAmount(defaultAmount);
+  }, [selectedCurrency]);
 
   // Load Razorpay script on component mount
   useEffect(() => {
@@ -60,12 +78,14 @@ const WalletCard: React.FC = () => {
         razorpayOrderId: response.razorpay_order_id,
         razorpayPaymentId: response.razorpay_payment_id,
         razorpaySignature: response.razorpay_signature,
-        amount: amount
+        amount: amount,
+        currency: selectedCurrency
       });
 
       // Calculate coins
-      const coins = amount * 2;
-      setStatusMessage(`Payment successful! Added ₹${amount} to your wallet (${coins} LeadsCoins)`);
+      const coins = getCoinsForAmount(amount);
+      const currencySymbol = selectedCurrency === 'INR' ? '₹' : '$';
+      setStatusMessage(`Payment successful! Added ${currencySymbol}${amount} to your wallet (${coins} LeadsCoins)`);
       setMessageType('success');
       
       // Only refresh wallet after verification completes
@@ -77,7 +97,7 @@ const WalletCard: React.FC = () => {
       setIsProcessing(false);
       setProcessingMessage('');
     }
-  }, [verifyRechargePayment, refreshWallet]);
+  }, [verifyRechargePayment, refreshWallet, selectedCurrency]);
 
   const handleRecharge = async () => {
     // Check if user has an active subscription
@@ -92,15 +112,15 @@ const WalletCard: React.FC = () => {
       setStatusMessage('');
 
       // Step 1: Create the recharge order
-      const orderResponse = await rechargeWallet(selectedAmount);
+      const orderResponse = await rechargeWallet(selectedAmount, selectedCurrency);
       
       setProcessingMessage('Processing payment...');
 
       // Step 2: Initialize Razorpay payment
       await initRazorpayPayment({
         key: RAZORPAY_KEY_ID,
-        amount: orderResponse.amount, // Already in paise
-        currency: 'INR',
+        amount: orderResponse.amount, // Already in paise/cents
+        currency: orderResponse.currency,
         name: 'Leads Generator',
         description: 'Wallet Recharge',
         order_id: orderResponse.orderId,
@@ -112,7 +132,8 @@ const WalletCard: React.FC = () => {
         },
         notes: {
           purpose: "wallet_recharge",
-          amount: selectedAmount.toString()
+          amount: selectedAmount.toString(),
+          currency: selectedCurrency
         },
         theme: {
           color: '#3B82F6' // Tailwind blue-500 color
@@ -199,6 +220,32 @@ const WalletCard: React.FC = () => {
             </div>
           )}
           
+          {/* Currency selector */}
+          <div className="mb-4">
+            <div className="flex space-x-2">
+              <button
+                className={`flex items-center px-3 py-1.5 rounded-lg border ${
+                  selectedCurrency === 'INR' 
+                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedCurrency('INR')}
+              >
+                <span className="mr-2">₹</span> INR
+              </button>
+              <button
+                className={`flex items-center px-3 py-1.5 rounded-lg border ${
+                  selectedCurrency === 'USD' 
+                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedCurrency('USD')}
+              >
+                <DollarSign size={14} className="mr-1" /> USD
+              </button>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
             {rechargeAmounts.map((option) => (
               <button
@@ -222,7 +269,9 @@ const WalletCard: React.FC = () => {
           <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-100">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Selected amount:</span>
-              <span className="font-medium" id="amount">₹{selectedAmount}</span>
+              <span className="font-medium" id="amount">
+                {selectedCurrency === 'INR' ? '₹' : '$'}{selectedAmount}
+              </span>
             </div>
             <div className="flex justify-between text-sm mt-1">
               <span className="text-gray-600">Coins to receive:</span>
@@ -250,18 +299,13 @@ const WalletCard: React.FC = () => {
               </>
             ) : (
               <>
-                {!isSubscriptionActive ? (
-                  <>Subscribe to Recharge <Lock size={16} className="ml-2" /></>
-                ) : (
-                  <>Recharge Now <ArrowRight size={16} className="ml-2" /></>
-                )}
+                Recharge Now <ArrowRight className="ml-2" size={16} />
               </>
             )}
           </button>
         </div>
       </motion.div>
       
-      {/* Subscription Required Popup */}
       <AnimatePresence>
         {showSubscriptionPopup && (
           <SubscriptionRequiredPopup onClose={() => setShowSubscriptionPopup(false)} />

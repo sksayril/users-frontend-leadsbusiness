@@ -35,7 +35,8 @@ import {
   FileDown,
   FileText,
   Info,
-  Sparkles
+  Sparkles,
+  Coins
 } from 'lucide-react';
 import { faker } from '@faker-js/faker';
 import leadsService, { Category, LeadPreview, PaginationData, PurchasedLead } from '../../services/leadsService';
@@ -55,6 +56,16 @@ interface EnhancedLeadPreview {
   isPurchased?: boolean;
   purchaseStatus?: string;
 }
+
+// Custom renderer for coin values
+const renderCoinValue = (value: number | string) => {
+  return (
+    <div className="flex items-center">
+      <Coins size={14} className="text-amber-500 mr-1.5" />
+      <span>{value}</span>
+    </div>
+  );
+};
 
 const CategorizedLeads: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'hot' | 'warm' | 'cold'>('all');
@@ -100,6 +111,9 @@ const CategorizedLeads: React.FC = () => {
     totalPages: 1,
     leadsPerPage: 10
   });
+  
+  // Add a new state variable to track the minimize/maximize state of the Bulk Export Options card
+  const [bulkExportCardExpanded, setBulkExportCardExpanded] = useState(true);
   
   // Fetch categories on component mount
   useEffect(() => {
@@ -712,10 +726,10 @@ const CategorizedLeads: React.FC = () => {
             href="/premium-leads"
             className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm focus:outline-none"
           >
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <Sparkles className="mr-2 text-yellow-500" size={18} />
               Premium Leads
-            </div>
+            </div> */}
           </a>
         </div>
       </div>
@@ -878,8 +892,7 @@ const CategorizedLeads: React.FC = () => {
                                   </td>
                                   <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="text-xs font-medium flex items-center text-gray-900">
-                                      <CreditCard size={14} className="mr-1.5 text-gray-500" />
-                                      ₹{lead.price}
+                                      {renderCoinValue(lead.price)}
                                     </div>
                                   </td>
                                   <td className="px-4 py-3 whitespace-nowrap text-right">
@@ -1082,153 +1095,170 @@ const CategorizedLeads: React.FC = () => {
           
           {/* Export Actions Bar */}
           <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
-            <div className="flex flex-col space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-sm font-medium text-gray-900 flex items-center">
-                  <FileText className="mr-2 text-gray-700" size={16} />
-                  Bulk Export Options
-                </h3>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-medium text-gray-900 flex items-center">
+                <FileText className="mr-2 text-gray-700" size={16} />
+                Bulk Export Options
+              </h3>
+              
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleExportAllLeads}
+                  disabled={exportLoading || filteredPurchasedLeads.length === 0}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {exportLoading ? (
+                    <>
+                      <Loader className="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-gray-700" />
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <FileDown size={14} className="mr-1.5 text-gray-700" />
+                      Export All Leads
+                    </>
+                  )}
+                </button>
                 
-                <div className="flex flex-wrap gap-2">
+                <div className="relative inline-block text-left">
                   <button
-                    onClick={handleExportAllLeads}
-                    disabled={exportLoading || filteredPurchasedLeads.length === 0}
-                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={() => document.getElementById('category-export-dropdown')?.classList.toggle('hidden')}
+                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                   >
-                    {exportLoading ? (
-                      <>
-                        <Loader className="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 text-gray-700" />
-                        Exporting...
-                      </>
-                    ) : (
-                      <>
-                        <FileDown size={14} className="mr-1.5 text-gray-700" />
-                        Export All Leads
-                      </>
-                    )}
+                    <Filter size={14} className="mr-1.5 text-gray-700" />
+                    Export By Category
+                    <ChevronDown size={14} className="ml-1.5 text-gray-500" />
                   </button>
-                  
-                  <div className="relative inline-block text-left">
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('category-export-dropdown')?.classList.toggle('hidden')}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                    >
-                      <Filter size={14} className="mr-1.5 text-gray-700" />
-                      Export By Category
-                      <ChevronDown size={14} className="ml-1.5 text-gray-500" />
-                    </button>
-                    <div 
-                      id="category-export-dropdown"
-                      className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 divide-y divide-gray-100"
-                    >
-                      <div className="py-1">
-                        {Object.entries(purchasedLeadCategories).map(([id, name]) => (
-                          <button
-                            key={id}
-                            onClick={() => {
-                              handleExportByCategory(id, name);
-                              document.getElementById('category-export-dropdown')?.classList.add('hidden');
-                            }}
-                            className="w-full text-left px-4 py-2 text-xs text-gray-900 hover:bg-gray-100 flex items-center"
-                          >
-                            <Download size={14} className="mr-2 text-gray-500" />
-                            {name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Advanced Filtering Section */}
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center mb-3">
-                  <Filter size={14} className="mr-2 text-gray-700" />
-                  <h4 className="text-sm font-medium text-gray-700">Filter Leads</h4>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label htmlFor="category-filter" className="block text-xs font-medium text-gray-700 mb-1">Category</label>
-                    <select
-                      id="category-filter"
-                      className="block w-full py-1.5 px-3 border border-gray-300 bg-white rounded text-sm shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                      value={purchasedCategoryFilter}
-                      onChange={(e) => setPurchasedCategoryFilter(e.target.value)}
-                    >
-                      <option value="all">All Categories</option>
+                  <div 
+                    id="category-export-dropdown"
+                    className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 divide-y divide-gray-100"
+                  >
+                    <div className="py-1">
                       {Object.entries(purchasedLeadCategories).map(([id, name]) => (
-                        <option key={id} value={id}>{name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="search-filter" className="block text-xs font-medium text-gray-700 mb-1">Search</label>
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
-                      <input
-                        id="search-filter"
-                        type="text"
-                        placeholder="Name, email or contact..."
-                        className="pl-8 pr-3 py-1.5 block w-full border border-gray-300 rounded text-sm shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                        value={purchasedLeadSearchTerm}
-                        onChange={(e) => setPurchasedLeadSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-end">
-                    <button 
-                      onClick={() => {
-                        setPurchasedCategoryFilter('all');
-                        setPurchasedLeadSearchTerm('');
-                      }}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                    >
-                      <XCircle size={14} className="mr-1.5 text-gray-500" />
-                      Clear Filters
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Quick Category Filters */}
-              {Object.keys(purchasedLeadCategories).length > 0 && (
-                <div className="border-t border-gray-200 pt-4 mt-2">
-                  <div className="flex items-center mb-3">
-                    <FileSpreadsheet size={14} className="mr-2 text-gray-700" />
-                    <h4 className="text-sm font-medium text-gray-700">Quick Export by Category</h4>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(purchasedLeadCategories).map(([id, name]) => {
-                      const categoryLeadsCount = purchasedLeads.filter(lead => {
-                        const leadCategoryId = typeof lead.category === 'string' ? lead.category : lead.category._id;
-                        return leadCategoryId === id;
-                      }).length;
-                      
-                      return (
                         <button
                           key={id}
-                          onClick={() => handleExportByCategory(id, name)}
-                          disabled={exportLoading || categoryLeadsCount === 0}
-                          className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => {
+                            handleExportByCategory(id, name);
+                            document.getElementById('category-export-dropdown')?.classList.add('hidden');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-gray-900 hover:bg-gray-100 flex items-center"
                         >
-                          <Building size={12} className="mr-1 text-gray-500" />
+                          <Download size={14} className="mr-2 text-gray-500" />
                           {name}
-                          <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-                            {categoryLeadsCount}
-                          </span>
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
+                
+                {/* Add a minimize/maximize button */}
+                <button
+                  onClick={() => setBulkExportCardExpanded(!bulkExportCardExpanded)}
+                  className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                  aria-label={bulkExportCardExpanded ? "Minimize" : "Maximize"}
+                  title={bulkExportCardExpanded ? "Minimize" : "Maximize"}
+                >
+                  {bulkExportCardExpanded ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </button>
+              </div>
             </div>
+            
+            {/* Wrap the content that should be collapsible in a conditional */}
+            {bulkExportCardExpanded && (
+              <>
+                {/* Advanced Filtering Section */}
+                <div className="border-t border-gray-200 pt-4 mt-2">
+                  <div className="flex items-center mb-3">
+                    <Filter size={14} className="mr-2 text-gray-700" />
+                    <h4 className="text-sm font-medium text-gray-700">Filter Leads</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label htmlFor="category-filter" className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+                      <select
+                        id="category-filter"
+                        className="block w-full py-1.5 px-3 border border-gray-300 bg-white rounded text-sm shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                        value={purchasedCategoryFilter}
+                        onChange={(e) => setPurchasedCategoryFilter(e.target.value)}
+                      >
+                        <option value="all">All Categories</option>
+                        {Object.entries(purchasedLeadCategories).map(([id, name]) => (
+                          <option key={id} value={id}>{name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="search-filter" className="block text-xs font-medium text-gray-700 mb-1">Search</label>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+                        <input
+                          id="search-filter"
+                          type="text"
+                          placeholder="Name, email or contact..."
+                          className="pl-8 pr-3 py-1.5 block w-full border border-gray-300 rounded text-sm shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                          value={purchasedLeadSearchTerm}
+                          onChange={(e) => setPurchasedLeadSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-end">
+                      <button 
+                        onClick={() => {
+                          setPurchasedCategoryFilter('all');
+                          setPurchasedLeadSearchTerm('');
+                        }}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                      >
+                        <XCircle size={14} className="mr-1.5 text-gray-500" />
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Quick Category Filters */}
+                {Object.keys(purchasedLeadCategories).length > 0 && (
+                  <div className="border-t border-gray-200 pt-4 mt-2">
+                    <div className="flex items-center mb-3">
+                      <FileSpreadsheet size={14} className="mr-2 text-gray-700" />
+                      <h4 className="text-sm font-medium text-gray-700">Quick Export by Category</h4>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(purchasedLeadCategories).map(([id, name]) => {
+                        const categoryLeadsCount = purchasedLeads.filter(lead => {
+                          const leadCategoryId = typeof lead.category === 'string' ? lead.category : lead.category._id;
+                          return leadCategoryId === id;
+                        }).length;
+                        
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => handleExportByCategory(id, name)}
+                            disabled={exportLoading || categoryLeadsCount === 0}
+                            className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Building size={12} className="mr-1 text-gray-500" />
+                            {name}
+                            <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                              {categoryLeadsCount}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
           
           {/* Main purchased leads table */}

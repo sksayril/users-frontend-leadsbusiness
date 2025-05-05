@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle, CreditCard, Wallet, ArrowRight, Loader } from 'lucide-react';
+import { X, AlertCircle, CreditCard, Wallet, ArrowRight, Loader, DollarSign, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { initRazorpayPayment, loadRazorpay, RazorpaySuccessResponse } from '../../utils/razorpay';
@@ -8,11 +8,19 @@ import { useAuth } from '../../contexts/AuthContext';
 const RAZORPAY_KEY_ID = "rzp_test_BDT2TegS4Ax6Vp"; // Should come from env
 
 // Recharge amounts in INR
-const rechargeAmounts = [
+const inrRechargeAmounts = [
   { value: 100, coins: 200, label: '₹100', featured: false },
   { value: 250, coins: 500, label: '₹250', featured: true },
   { value: 500, coins: 1000, label: '₹500', featured: false },
   { value: 1000, coins: 2000, label: '₹1000', featured: false },
+];
+
+// Recharge amounts in USD
+const usdRechargeAmounts = [
+  { value: 5, coins: 200, label: '$5', featured: false },
+  { value: 10, coins: 500, label: '$10', featured: true },
+  { value: 20, coins: 1000, label: '$20', featured: false },
+  { value: 50, coins: 2500, label: '$50', featured: false },
 ];
 
 interface RechargeWalletModalProps {
@@ -34,12 +42,22 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
   const { user } = useAuth();
   const { rechargeWallet, verifyRechargePayment, refreshWallet, loading } = useWallet();
   const [selectedAmount, setSelectedAmount] = useState<number>(250);
+  const [selectedCurrency, setSelectedCurrency] = useState<'INR' | 'USD'>('INR');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingMessage, setProcessingMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
   const [razorpayLoaded, setRazorpayLoaded] = useState<boolean>(false);
   const [autoStartRecharge, setAutoStartRecharge] = useState<boolean>(false);
+
+  // Get the appropriate recharge amounts based on currency
+  const rechargeAmounts = selectedCurrency === 'INR' ? inrRechargeAmounts : usdRechargeAmounts;
+
+  // When currency changes, set a default amount for that currency
+  useEffect(() => {
+    const defaultAmount = selectedCurrency === 'INR' ? 250 : 10;
+    setSelectedAmount(defaultAmount);
+  }, [selectedCurrency]);
 
   // Load Razorpay script on component mount
   useEffect(() => {
@@ -88,12 +106,14 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
         razorpayOrderId: response.razorpay_order_id,
         razorpayPaymentId: response.razorpay_payment_id,
         razorpaySignature: response.razorpay_signature,
-        amount: amount
+        amount: amount,
+        currency: selectedCurrency
       });
 
       // Calculate coins
-      const coins = amount * 2;
-      setStatusMessage(`Payment successful! Added ₹${amount} to your wallet (${coins} LeadsCoins)`);
+      const coins = getCoinsForAmount(amount);
+      const currencySymbol = selectedCurrency === 'INR' ? '₹' : '$';
+      setStatusMessage(`Payment successful! Added ${currencySymbol}${amount} to your wallet (${coins} LeadsCoins)`);
       setMessageType('success');
       
       // Only refresh wallet after verification completes
@@ -134,15 +154,15 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
       setStatusMessage('');
 
       // Step 1: Create the recharge order
-      const orderResponse = await rechargeWallet(selectedAmount);
+      const orderResponse = await rechargeWallet(selectedAmount, selectedCurrency);
       
       setProcessingMessage('Processing payment...');
 
       // Step 2: Initialize Razorpay payment
       await initRazorpayPayment({
         key: RAZORPAY_KEY_ID,
-        amount: orderResponse.amount, // Already in paise
-        currency: 'INR',
+        amount: orderResponse.amount, // Already in paise/cents
+        currency: orderResponse.currency,
         name: 'Leads Generator',
         description: 'Wallet Recharge',
         order_id: orderResponse.orderId,
@@ -154,7 +174,8 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
         },
         notes: {
           purpose: "wallet_recharge",
-          amount: selectedAmount.toString()
+          amount: selectedAmount.toString(),
+          currency: selectedCurrency
         },
         theme: {
           color: '#38bdf8' // Tailwind sky-500 color
@@ -245,37 +266,71 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
                   </div>
                 )}
                 
+                {/* Currency selector */}
+                <div className="mt-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Select currency</h4>
+                  <div className="flex space-x-2">
+                    <button
+                      className={`flex items-center px-4 py-2 rounded-lg border ${
+                        selectedCurrency === 'INR' 
+                          ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedCurrency('INR')}
+                    >
+                      <span className="mr-2">₹</span> Indian Rupee
+                    </button>
+                    <button
+                      className={`flex items-center px-4 py-2 rounded-lg border ${
+                        selectedCurrency === 'USD' 
+                          ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedCurrency('USD')}
+                    >
+                      <DollarSign size={16} className="mr-1" /> US Dollar
+                    </button>
+                  </div>
+                </div>
+                
                 {/* Recharge options */}
                 <div className="mt-4">
                   <h4 className="font-medium text-gray-900">Select an amount to recharge</h4>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="grid grid-cols-2 gap-3 my-3">
                     {rechargeAmounts.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => setSelectedAmount(option.value)}
-                        className={`
-                          py-2 rounded-md border text-center transition-all
-                          ${selectedAmount === option.value 
-                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                            : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50'
-                          }
-                          ${option.featured ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
-                        `}
-                        disabled={isProcessing}
+                        className={`py-3 px-4 border rounded-lg transition relative ${
+                          option.featured ? 'border-blue-300 bg-blue-50/50' : 'border-gray-200'
+                        } ${
+                          selectedAmount === option.value
+                            ? 'border-blue-500 ring-2 ring-blue-200'
+                            : 'hover:bg-gray-50'
+                        }`}
                       >
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-xs text-gray-500">{option.coins} coins</div>
+                        {option.featured && (
+                          <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                            Popular
+                          </span>
+                        )}
+                        <p className="font-medium text-lg text-gray-900">{option.label}</p>
+                        <p className="text-gray-500 text-sm flex items-center mt-1">
+                          <Wallet size={12} className="mr-1" />
+                          {option.coins} LeadCoins
+                        </p>
                       </button>
                     ))}
                   </div>
                   
-                  <div className="flex justify-between text-sm mt-4">
-                    <span className="text-gray-600">Selected amount:</span>
-                    <span className="font-medium">₹{selectedAmount}</span>
-                  </div>
-                  <div className="flex justify-between text-sm mt-1">
-                    <span className="text-gray-600">Coins to receive:</span>
-                    <span className="font-medium">{getCoinsForAmount(selectedAmount)} coins</span>
+                  <div className="mt-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+                    <div className="flex items-start">
+                      <Globe size={16} className="text-blue-500 mr-2 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-blue-700">You'll get {getCoinsForAmount(selectedAmount)} LeadCoins</p>
+                        <p>Use these coins to purchase leads, generate reports, and more.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

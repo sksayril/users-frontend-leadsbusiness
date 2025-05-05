@@ -8,18 +8,20 @@ interface WalletContextType {
   subscription: Subscription | null;
   loading: boolean;
   error: string | null;
-  rechargeWallet: (amount: number) => Promise<{ orderId: string; amount: number }>;
+  rechargeWallet: (amount: number, currency?: string) => Promise<{ orderId: string; amount: number; currency: string }>;
   verifyRechargePayment: (data: {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
     amount: number;
+    currency?: string;
   }) => Promise<void>;
-  createSubscription: (plan: 'MONTHLY' | 'QUARTERLY' | 'YEARLY') => Promise<{ orderId: string }>;
+  createSubscription: (plan: 'MONTHLY' | 'QUARTERLY' | 'YEARLY', currency?: string) => Promise<{ orderId: string; currency: string }>;
   verifySubscriptionPayment: (data: {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
+    currency?: string;
   }) => Promise<void>;
   refreshWallet: () => Promise<void>;
 }
@@ -29,9 +31,9 @@ const WalletContext = createContext<WalletContextType>({
   subscription: null,
   loading: false,
   error: null,
-  rechargeWallet: async () => ({ orderId: '', amount: 0 }),
+  rechargeWallet: async () => ({ orderId: '', amount: 0, currency: 'INR' }),
   verifyRechargePayment: async () => {},
-  createSubscription: async () => ({ orderId: '' }),
+  createSubscription: async () => ({ orderId: '', currency: 'INR' }),
   verifySubscriptionPayment: async () => {},
   refreshWallet: async () => {},
 });
@@ -106,14 +108,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const rechargeWallet = async (amount: number) => {
+  const rechargeWallet = async (amount: number, currency: string = 'INR') => {
     try {
       setLoading(true);
       setError(null);
-      const response = await walletService.createRechargeOrder(amount);
+      const response = await walletService.createRechargeOrder(amount, currency);
       return { 
         orderId: response.order.id,
-        amount: response.order.amount
+        amount: response.order.amount,
+        currency: response.order.currency
       };
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create recharge order');
@@ -128,6 +131,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     razorpayPaymentId: string;
     razorpaySignature: string;
     amount: number;
+    currency?: string;
   }) => {
     try {
       setLoading(true);
@@ -142,12 +146,15 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const createSubscription = async (plan: 'MONTHLY' | 'QUARTERLY' | 'YEARLY') => {
+  const createSubscription = async (plan: 'MONTHLY' | 'QUARTERLY' | 'YEARLY', currency: string = 'INR') => {
     try {
       setLoading(true);
       setError(null);
-      const response = await walletService.createSubscriptionOrder(plan);
-      return { orderId: response.order.id };
+      const response = await walletService.createSubscriptionOrder(plan, currency);
+      return { 
+        orderId: response.order.id,
+        currency: response.order.currency || currency
+      };
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create subscription order');
       throw err;
@@ -160,6 +167,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     razorpayOrderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
+    currency?: string;
   }) => {
     try {
       setLoading(true);

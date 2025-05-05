@@ -69,6 +69,26 @@ const SubscriptionRequiredPopup: React.FC<SubscriptionRequiredPopupProps> = ({ o
             You need an active subscription to recharge your wallet and access premium features.
           </p>
           
+          {/* Add pricing information */}
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-6 overflow-hidden">
+            <div className="bg-blue-500 text-white text-center py-1.5 text-sm font-medium">
+              Monthly Plan
+            </div>
+            <div className="p-4 text-center">
+              <div className="flex flex-col items-center justify-center mb-3">
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold">₹399</span>
+                  <span className="text-gray-500 ml-1 text-sm">/month</span>
+                </div>
+                <div className="flex items-baseline mt-1">
+                  <span className="text-xl font-bold text-gray-700">$5.99</span>
+                  <span className="text-gray-500 ml-1 text-sm">USD</span>
+                </div>
+              </div>
+              <div className="text-xs text-gray-500">Get access to all premium features</div>
+            </div>
+          </div>
+          
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
             <h4 className="font-medium text-blue-800 mb-2">Premium Benefits:</h4>
             <ul className="space-y-2">

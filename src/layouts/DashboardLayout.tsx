@@ -12,7 +12,11 @@ import {
   Briefcase,
   Lock,
   ChevronRight,
-  UserCircle
+  UserCircle,
+  Mail,
+  Headphones,
+  MessageSquare,
+  TicketIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
@@ -27,6 +31,8 @@ const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [subscriptionPopupOpen, setSubscriptionPopupOpen] = useState(false);
+  const [supportPopupOpen, setSupportPopupOpen] = useState(false);
+  const [supportType, setSupportType] = useState<'ticket' | 'chat' | null>(null);
   
   // Save sidebar state to localStorage
   useEffect(() => {
@@ -55,6 +61,11 @@ const DashboardLayout: React.FC = () => {
       e.preventDefault();
       setSubscriptionPopupOpen(true);
     }
+  };
+
+  const handleSupportAction = (type: 'ticket' | 'chat') => {
+    setSupportType(type);
+    setSupportPopupOpen(true);
   };
 
   const navItems = [
@@ -117,6 +128,7 @@ const DashboardLayout: React.FC = () => {
                   user={user}
                   subscription={subscription}
                   handleNavigation={handleNavigation}
+                  handleSupportAction={handleSupportAction}
                   closeMobileMenu={() => setMobileMenuOpen(false)}
                 />
               </div>
@@ -136,6 +148,7 @@ const DashboardLayout: React.FC = () => {
             user={user}
             subscription={subscription}
             handleNavigation={handleNavigation}
+            handleSupportAction={handleSupportAction}
             minimized={!sidebarOpen}
             toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           />
@@ -143,10 +156,29 @@ const DashboardLayout: React.FC = () => {
       </div>
       
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="py-6 px-8">
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <div className="py-6 px-8 flex-1">
           <Outlet />
         </div>
+        
+        {/* Footer */}
+        <footer className="border-t border-gray-200 py-4 px-6 bg-white mt-auto">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div className="mb-3 sm:mb-0">
+              <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} BusinessPro. All rights reserved.</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <a href="mailto:info.cripcocode@gmail.com" className="text-sm text-gray-600 hover:text-blue-600 flex items-center">
+                <Mail size={16} className="mr-1.5 text-gray-500" />
+                info.cripcocode@gmail.com
+              </a>
+              <span className="text-gray-300">|</span>
+              <a href="#" className="text-sm text-gray-600 hover:text-blue-600">Support</a>
+              <span className="text-gray-300">|</span>
+              <a href="#" className="text-sm text-gray-600 hover:text-blue-600">Privacy Policy</a>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Subscription Popup */}
@@ -179,9 +211,15 @@ const DashboardLayout: React.FC = () => {
                     Monthly Plan
                   </div>
                   <div className="p-4">
-                    <div className="flex items-baseline justify-center mb-2">
-                      <span className="text-2xl font-bold">₹399</span>
-                      <span className="text-gray-500 ml-1 text-sm">/month</span>
+                    <div className="flex flex-col items-center justify-center mb-2">
+                      <div className="flex items-baseline">
+                        <span className="text-2xl font-bold">₹399</span>
+                        <span className="text-gray-500 ml-1 text-sm">/month</span>
+                      </div>
+                      <div className="flex items-baseline mt-1">
+                        <span className="text-xl font-bold text-gray-700">$5.99</span>
+                        <span className="text-gray-500 ml-1 text-sm">USD</span>
+                      </div>
                     </div>
                     <ul className="mb-4 space-y-2 text-sm text-gray-600">
                       <li className="flex items-center justify-center">
@@ -227,6 +265,91 @@ const DashboardLayout: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Support Popup */}
+      <AnimatePresence>
+        {supportPopupOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSupportPopupOpen(false)}
+          >
+            <motion.div
+              className="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+                  {supportType === 'ticket' ? (
+                    <TicketIcon className="h-8 w-8 text-blue-600" />
+                  ) : (
+                    <MessageSquare className="h-8 w-8 text-blue-600" />
+                  )}
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {supportType === 'ticket' ? 'Submit Support Ticket' : 'Chat with Admin'}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {supportType === 'ticket' 
+                    ? 'Describe your issue and our support team will get back to you as soon as possible.' 
+                    : 'Start a conversation with our admin team for quick assistance.'}
+                </p>
+                
+                {supportType === 'ticket' ? (
+                  <div className="mb-6">
+                    <div className="mb-4">
+                      <input 
+                        type="text" 
+                        placeholder="Subject" 
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <textarea 
+                        placeholder="Describe your issue in detail..." 
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      ></textarea>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                    <p className="text-gray-600 text-sm">
+                      Our admin team is available Monday to Friday, 9 AM to 6 PM. 
+                      Average response time: 15 minutes.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="flex space-x-4">
+                  <button 
+                    onClick={() => {
+                      // Here would be the logic to submit ticket or start chat
+                      setSupportPopupOpen(false);
+                      // Show confirmation message
+                      alert(supportType === 'ticket' ? 'Ticket submitted successfully!' : 'Chat request sent!');
+                    }}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors"
+                  >
+                    {supportType === 'ticket' ? 'Submit Ticket' : 'Start Chat'}
+                  </button>
+                  <button 
+                    onClick={() => setSupportPopupOpen(false)}
+                    className="flex-1 border border-gray-300 text-gray-600 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -237,6 +360,7 @@ type SidebarContentProps = {
   user: { name: string; email: string } | null;
   subscription: { isActive: boolean } | null;
   handleNavigation: (path: string, e: React.MouseEvent) => void;
+  handleSupportAction: (type: 'ticket' | 'chat') => void;
   minimized?: boolean;
   toggleSidebar?: () => void;
   closeMobileMenu?: () => void;
@@ -248,6 +372,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   user,
   subscription,
   handleNavigation,
+  handleSupportAction,
   minimized = false,
   toggleSidebar,
   closeMobileMenu
@@ -358,6 +483,65 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               );
             })}
           </nav>
+        </div>
+        
+        {/* Support Section */}
+        <div className={`mb-6 ${minimized ? 'px-2' : 'px-3'}`}>
+          <p className={`text-xs uppercase font-semibold text-white/50 mb-3 ${minimized ? 'text-center' : ''}`}>
+            {minimized ? 'Help' : 'Support & Help'}
+          </p>
+          <div className="space-y-1.5">
+            <button
+              onClick={() => handleSupportAction('ticket')}
+              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 
+                text-white/70 hover:text-white hover:bg-white/10
+                ${minimized ? "justify-center" : ""}`}
+            >
+              <div className="flex-shrink-0 text-white/70 group-hover:text-white">
+                <TicketIcon size={20} />
+              </div>
+              
+              {!minimized && (
+                <span className="flex-1 transition-all text-left">
+                  Raise Support Ticket
+                </span>
+              )}
+            </button>
+            
+            <button
+              onClick={() => handleSupportAction('chat')}
+              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 
+                text-white/70 hover:text-white hover:bg-white/10
+                ${minimized ? "justify-center" : ""}`}
+            >
+              <div className="flex-shrink-0 text-white/70 group-hover:text-white">
+                <MessageSquare size={20} />
+              </div>
+              
+              {!minimized && (
+                <span className="flex-1 transition-all text-left">
+                  Chat with Admin
+                </span>
+              )}
+            </button>
+            
+            <a 
+              href="mailto:info.cripcocode@gmail.com"
+              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 
+                text-white/70 hover:text-white hover:bg-white/10
+                ${minimized ? "justify-center" : ""}`}
+            >
+              <div className="flex-shrink-0 text-white/70 group-hover:text-white">
+                <Mail size={20} />
+              </div>
+              
+              {!minimized && (
+                <span className="flex-1 transition-all text-left">
+                  Email Support
+                </span>
+              )}
+            </a>
+          </div>
         </div>
       </div>
       

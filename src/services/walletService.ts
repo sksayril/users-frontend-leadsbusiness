@@ -27,6 +27,7 @@ export interface PaymentVerificationData {
   razorpayPaymentId: string;
   razorpaySignature: string;
   amount?: number;
+  currency?: string;
 }
 
 export interface SubscriptionPlan {
@@ -48,8 +49,8 @@ const walletService = {
   },
   
   // Create Recharge Order
-  createRechargeOrder: async (amount: number): Promise<{ order: RazorpayOrder }> => {
-    const response = await api.post('/users/wallet/recharge/order', { amount });
+  createRechargeOrder: async (amount: number, currency: string = 'INR'): Promise<{ order: RazorpayOrder }> => {
+    const response = await api.post('/users/wallet/recharge/order', { amount, currency });
     return response.data;
   },
   
@@ -60,8 +61,8 @@ const walletService = {
   },
   
   // Create Subscription Order
-  createSubscriptionOrder: async (plan: SubscriptionPlan['plan']): Promise<{ order: RazorpayOrder }> => {
-    const response = await api.post('/users/subscription/order', { plan });
+  createSubscriptionOrder: async (plan: SubscriptionPlan['plan'], currency: string = 'INR'): Promise<{ order: RazorpayOrder }> => {
+    const response = await api.post('/users/subscription/order', { plan, currency });
     return response.data;
   },
   

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 type StatsCardProps = {
   title: string;
-  value: string | number;
+  value: string | number | React.ReactNode;
   icon: React.ReactNode;
   change?: {
     value: number;

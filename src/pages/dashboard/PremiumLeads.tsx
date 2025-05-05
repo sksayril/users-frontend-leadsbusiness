@@ -29,7 +29,8 @@ import {
   CreditCard,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -37,6 +38,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import RechargeWalletModal from '../../components/wallet/RechargeWalletModal';
 import { useNavigate } from 'react-router-dom';
 import scraperService from '../../services/scraperService';
+import './premiumLeads.css'; // For the custom animation
 
 type PremiumLead = {
   id: string;
@@ -126,6 +128,14 @@ const PremiumLeads: React.FC = () => {
   const [modalCurrentPage, setModalCurrentPage] = useState<number>(1);
   const [modalResultsPerPage, setModalResultsPerPage] = useState<number>(20);
   const [modalLoading, setModalLoading] = useState<boolean>(false);
+  
+  // After the state variables section (around line 125), add these new state variables
+  const [mostRecentSessionId, setMostRecentSessionId] = useState<string | null>(null);
+  const [clickedSessionId, setClickedSessionId] = useState<string | null>(null);
+  
+  // Add a new state variable for tracking most recent session and clicked button state
+  const [recentlyScrapedSessionId, setRecentlyScrapedSessionId] = useState<string | null>(null);
+  const [clickedViewButton, setClickedViewButton] = useState<string | null>(null);
   
   // Mock data
   const premiumLeads: PremiumLead[] = [
@@ -272,6 +282,15 @@ const PremiumLeads: React.FC = () => {
           count: result.count || 0,
           createdAt: result.createdAt
         })) || []);
+        
+        // In the fetchSessions function, add this at the end of the success block (around line 282)
+        if (scrapeResults.success && scrapeResults.results?.length > 0) {
+          // Set the most recent session ID
+          const sortedSessions = [...scrapeResults.results].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setMostRecentSessionId(sortedSessions[0].id);
+        }
       }
     } catch (err: any) {
       console.error('Error fetching sessions:', err);
@@ -369,8 +388,36 @@ const PremiumLeads: React.FC = () => {
       setLoadingMessage('');
       
       // Fetch updated sessions list
-      fetchSessions();
+      fetchSessions().then(() => {
+        // Get the most recent session ID from the fetch
+        if (sessions.length > 0) {
+          const sortedSessions = [...sessions].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setMostRecentSessionId(sortedSessions[0]._id);
+        }
+      });
       
+      // Remember the newly created session for highlighting
+      if (response && response.success) {
+        // After fetching sessions, find and highlight the most recent one
+        setTimeout(() => {
+          fetchSessions().then(() => {
+            if (sessions.length > 0) {
+              // Sort sessions by date (newest first)
+              const sortedSessions = [...sessions].sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+              // Highlight the most recent session
+              if (sortedSessions[0]) {
+                setRecentlyScrapedSessionId(sortedSessions[0]._id);
+                // Auto-clear the highlight after 30 seconds
+                setTimeout(() => setRecentlyScrapedSessionId(null), 30000);
+              }
+            }
+          });
+        }, 1000);
+      }
     } catch (err: any) {
       console.error('Error scraping:', err);
       
@@ -782,14 +829,34 @@ const PremiumLeads: React.FC = () => {
   // Update the session row action button to use the modal
   const sessionRowActions = (session: ScraperSession) => (
     <button
-      onClick={() => openResultsModal(session._id, session.keyword)}
+      onClick={() => {
+        // Visual feedback when clicking
+        setClickedViewButton(session._id);
+        setTimeout(() => {
+          openResultsModal(session._id, session.keyword);
+          setTimeout(() => setClickedViewButton(null), 300);
+        }, 150);
+      }}
       disabled={loading || modalLoading}
-      className="inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+      className={`
+        inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md 
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+        disabled:opacity-50 transition-all duration-200
+        ${clickedViewButton === session._id 
+          ? 'bg-blue-100 text-blue-700 border-blue-300 transform scale-95'
+          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300'
+        }
+      `}
     >
-      <Eye size={14} className="mr-1.5" />
+      <Eye size={14} className={`mr-1.5 ${clickedViewButton === session._id ? 'text-blue-500' : ''}`} />
       View Results
     </button>
   );
+  
+  // Add utility for managing session recency
+  const isRecentSession = (createdAt: string) => {
+    return new Date().getTime() - new Date(createdAt).getTime() < 60 * 60 * 1000; // Within the last hour
+  };
   
   return (
     <div className="space-y-6">
@@ -1043,37 +1110,98 @@ const PremiumLeads: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sessions.map(session => (
-                    <tr 
-                      key={session._id} 
-                      className={`hover:bg-gray-50 transition-colors ${selectedSessionId === session._id ? 'bg-blue-50' : ''}`}
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{session.keyword}</div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(session.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </td>
-                      {/* <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium flex items-center">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                            {session.count} results
-                          </span>
-                        </div>
-                      </td> */}
-                      <td className="px-4 py-3 whitespace-nowrap text-right">
-                        {sessionRowActions(session)}
-                      </td>
-                    </tr>
-                  ))}
+                  {sessions.map(session => {
+                    // Check if this session was created in the last hour
+                    const isRecent = new Date().getTime() - new Date(session.createdAt).getTime() < 60 * 60 * 1000;
+                    return (
+                      <tr 
+                        key={session._id} 
+                        className={`
+                          hover:bg-gray-50 transition-colors
+                          ${selectedSessionId === session._id ? 'bg-blue-50' : ''}
+                          ${recentlyScrapedSessionId === session._id ? 'bg-blue-50 relative border-l-4 border-blue-500' : ''}
+                        `}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {recentlyScrapedSessionId === session._id && (
+                              <div className="w-1 h-full absolute left-0 top-0 bottom-0 bg-blue-500"></div>
+                            )}
+                            {recentlyScrapedSessionId === session._id ? (
+                              <div className="flex-shrink-0 h-8 w-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 relative">
+                                <Search size={14} />
+                                <span className="absolute inset-0 rounded-full bg-blue-200 animate-ping opacity-30"></span>
+                              </div>
+                            ) : (
+                              <div className="flex-shrink-0 h-8 w-8 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center mr-2">
+                                <Search size={14} />
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 flex items-center">
+                                {session.keyword}
+                                {recentlyScrapedSessionId === session._id && (
+                                  <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 flex items-center">
+                                    <Sparkles size={10} className="mr-1 text-blue-500" />
+                                    Latest Search
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {session.count ? `${session.count} results` : "Results available"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">
+                            {new Date(session.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </td>
+                        {/* <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium flex items-center">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                              {session.count} results
+                            </span>
+                          </div>
+                        </td> */}
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          <div className="flex justify-end space-x-2">
+                            {sessionRowActions(session)}
+                            
+                            {recentlyScrapedSessionId === session._id && (
+                              <button
+                                onClick={() => {
+                                  if (detailedResults) {
+                                    handleExportCSV();
+                                  } else {
+                                    // First get the details then export
+                                    handleSessionSelect(session._id);
+                                    // Wait a bit for the data to load before exporting
+                                    setTimeout(() => {
+                                      if (detailedResults) {
+                                        handleExportCSV();
+                                      }
+                                    }, 1000);
+                                  }
+                                }}
+                                className="inline-flex items-center px-2 py-1 border border-green-300 text-xs font-medium rounded-md bg-green-50 text-green-700 hover:bg-green-100"
+                              >
+                                <Download size={14} className="mr-1" />
+                                Export
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1493,18 +1621,26 @@ const PremiumLeads: React.FC = () => {
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
-            {/* Modal panel */}
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-7xl sm:w-full">
+            {/* Modal panel - Increased max width and height */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-[95%] sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                {/* Header with enhanced session info */}
                 <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-4">
                   <div>
                     <h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center">
                       <MapPin className="mr-2 text-blue-500" size={20} />
-                      Results for: {modalKeyword}
+                      Results for: <span className="font-bold ml-1">{modalKeyword}</span>
                     </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {modalResults.length} businesses found
-                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-gray-500 flex items-center">
+                        <Database size={14} className="mr-1 text-blue-500" />
+                        {modalResults.length} businesses found
+                      </span>
+                      <span className="text-sm text-gray-500 px-2 py-0.5 bg-blue-50 rounded-full flex items-center">
+                        <Calendar size={14} className="mr-1 text-blue-500" />
+                        Session: {new Date().toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -1535,6 +1671,20 @@ const PremiumLeads: React.FC = () => {
                   </div>
                 </div>
                 
+                {/* Info message highlighting previous sessions */}
+                <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-md mb-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <Info className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-amber-700">
+                        These are the premium leads from your previous search session. Click on any business name to see more details.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 {modalLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader className="animate-spin h-8 w-8 text-blue-500 mr-3" />
@@ -1550,39 +1700,40 @@ const PremiumLeads: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="overflow-x-auto">
+                    {/* Table with increased height and scrolling */}
+                    <div className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-gray-200 rounded-lg shadow-inner">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-50 sticky top-0 z-10">
                           <tr>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Business Name
                             </th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Phone
                             </th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Website
                             </th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Rating
                             </th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Reviews
                             </th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Actions
                             </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {getPaginatedModalResults().map((result) => (
-                            <tr key={result._id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 whitespace-nowrap">
+                          {getPaginatedModalResults().map((result, index) => (
+                            <tr key={result._id} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                              <td className="px-6 py-4">
                                 <div className="flex items-center">
-                                  <div className="flex-shrink-0 h-8 w-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
+                                  <div className="flex-shrink-0 h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
                                     {result.title.charAt(0)}
                                   </div>
-                                  <div className="ml-3">
+                                  <div className="ml-4">
                                     <div className="text-sm font-medium text-gray-900">{result.title}</div>
                                     <a 
                                       href={result.link} 
@@ -1596,37 +1747,43 @@ const PremiumLeads: React.FC = () => {
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
+                              <td className="px-6 py-4">
                                 {result.phone ? (
                                   <a href={`tel:${result.phone}`} className="text-sm text-gray-900 flex items-center">
                                     <Phone size={14} className="mr-1.5 text-blue-500" />
                                     {result.phone}
                                   </a>
                                 ) : (
-                                  <span className="text-sm text-gray-500">Not available</span>
+                                  <span className="text-sm text-gray-500 flex items-center">
+                                    <Phone size={14} className="mr-1.5 text-gray-400" />
+                                    Not available
+                                  </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
+                              <td className="px-6 py-4">
                                 {result.website ? (
                                   <a
-                                    href={result.website}
+                                    href={result.website.startsWith('http') ? result.website : `https://${result.website}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="text-sm text-blue-600 hover:underline flex items-center"
                                   >
                                     <Globe size={14} className="mr-1.5" />
-                                    Visit website
+                                    {result.website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]}
                                   </a>
                                 ) : (
-                                  <span className="text-sm text-gray-500">Not available</span>
+                                  <span className="text-sm text-gray-500 flex items-center">
+                                    <Globe size={14} className="mr-1.5 text-gray-400" />
+                                    Not available
+                                  </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
+                              <td className="px-6 py-4">
                                 <div className="text-sm text-gray-900">
                                   {formatRating(result.stars)}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
+                              <td className="px-6 py-4">
                                 <div className="text-sm text-gray-900">
                                   {result.reviews ? (
                                     <span className="bg-yellow-50 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
@@ -1637,16 +1794,24 @@ const PremiumLeads: React.FC = () => {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <a
-                                  href={result.link}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                >
-                                  <ExternalLink size={12} className="mr-1" />
-                                  Open
-                                </a>
+                              <td className="px-6 py-4">
+                                <div className="flex space-x-2">
+                                  <a
+                                    href={result.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                  >
+                                    <ExternalLink size={12} className="mr-1" />
+                                    Open
+                                  </a>
+                                  <button
+                                    className="inline-flex items-center px-2.5 py-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                  >
+                                    <CreditCard size={12} className="mr-1" />
+                                    Contact
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1654,9 +1819,9 @@ const PremiumLeads: React.FC = () => {
                       </table>
                     </div>
                     
-                    {/* Pagination */}
+                    {/* Enhanced Pagination */}
                     {modalTotalPages > 1 && (
-                      <div className="flex items-center justify-between mt-4 px-4 py-3 border-t border-gray-200 sm:px-6">
+                      <div className="flex items-center justify-between mt-4 px-4 py-3 border-t border-gray-200 sm:px-6 bg-gray-50 rounded-lg">
                         <div className="flex-1 flex justify-between sm:hidden">
                           <button
                             onClick={() => setModalCurrentPage(Math.max(1, modalCurrentPage - 1))}
@@ -1693,6 +1858,7 @@ const PremiumLeads: React.FC = () => {
                                 <option value={20}>20</option>
                                 <option value={50}>50</option>
                                 <option value={100}>100</option>
+                                <option value={200}>200</option>
                               </select>
                             </div>
                           </div>
@@ -1708,17 +1874,18 @@ const PremiumLeads: React.FC = () => {
                                 <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                               </button>
                               
+                              {/* Page number buttons with improved display logic */}
                               {Array.from({ length: modalTotalPages }).map((_, index) => {
                                 const pageNumber = index + 1;
-                                // Show current page, first page, last page, and pages around current
+                                // Show first, last, current and pages around current
                                 const show = 
                                   pageNumber === 1 || 
                                   pageNumber === modalTotalPages || 
                                   Math.abs(pageNumber - modalCurrentPage) <= 1;
                                 
-                                // Add ellipsis when there's a gap
                                 if (!show) {
-                                  if (pageNumber === 2 || pageNumber === modalTotalPages - 1) {
+                                  if ((pageNumber === 2 && modalCurrentPage > 3) || 
+                                      (pageNumber === modalTotalPages - 1 && modalCurrentPage < modalTotalPages - 2)) {
                                     return (
                                       <span
                                         key={`ellipsis-${pageNumber}`}

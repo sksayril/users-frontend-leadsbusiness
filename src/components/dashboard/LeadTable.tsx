@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreHorizontal, ExternalLink } from 'lucide-react';
+import { MoreHorizontal, ExternalLink, Coins } from 'lucide-react';
 
 type Lead = {
   id: string;
@@ -14,9 +14,10 @@ type Lead = {
 type LeadTableProps = {
   leads: Lead[];
   title: string;
+  isTransactionView?: boolean;
 };
 
-const LeadTable: React.FC<LeadTableProps> = ({ leads, title }) => {
+const LeadTable: React.FC<LeadTableProps> = ({ leads, title, isTransactionView = false }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'new':
@@ -34,6 +35,15 @@ const LeadTable: React.FC<LeadTableProps> = ({ leads, title }) => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    if (isTransactionView) {
+      // For transactions, 'qualified' means 'CREDIT' and 'new' means 'DEBIT'
+      if (status === 'qualified') return 'CREDIT';
+      if (status === 'new') return 'DEBIT';
+    }
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   return (
     <div className="card overflow-hidden">
       <div className="flex justify-between items-center mb-6">
@@ -49,13 +59,13 @@ const LeadTable: React.FC<LeadTableProps> = ({ leads, title }) => {
           <thead>
             <tr className="border-b border-gray-200">
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Lead
+                {isTransactionView ? 'Description' : 'Lead'}
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                {isTransactionView ? 'Type' : 'Status'}
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Value
+                {isTransactionView ? 'Coins' : 'Value'}
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date
@@ -71,16 +81,25 @@ const LeadTable: React.FC<LeadTableProps> = ({ leads, title }) => {
                 <td className="px-3 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                    <div className="text-sm text-gray-500">{lead.company}</div>
+                    {lead.company && (
+                      <div className="text-sm text-gray-500">{lead.company}</div>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(lead.status)}`}>
-                    {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                    {getStatusLabel(lead.status)}
                   </span>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                  ${lead.value.toLocaleString()}
+                  {isTransactionView ? (
+                    <div className="flex items-center">
+                      <Coins size={14} className="text-amber-500 mr-1" />
+                      <span>{lead.value}</span>
+                    </div>
+                  ) : (
+                    `$${lead.value.toLocaleString()}`
+                  )}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                   {lead.date}

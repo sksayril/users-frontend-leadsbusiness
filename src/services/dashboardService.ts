@@ -23,6 +23,17 @@ export interface DashboardData {
         count: number;
       }>;
     }>;
+    monthlyStats: Array<{
+      monthYear: string;
+      monthLabel: string;
+      count: number;
+      coinsSpent: number;
+      categories: Array<{
+        id: string;
+        name: string;
+        count: number;
+      }>;
+    }>;
   };
   subscription: {
     isActive: boolean;
@@ -33,11 +44,13 @@ export interface DashboardData {
   };
   recentTransactions: Array<{
     type: 'CREDIT' | 'DEBIT';
-    amount: number;
+    amount?: number;
     coins: number;
     description: string;
     _id: string;
     date: string;
+    currency?: string;
+    inrEquivalent?: number;
   }>;
 }
 
