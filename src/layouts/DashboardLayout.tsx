@@ -175,7 +175,7 @@ const DashboardLayout: React.FC = () => {
               <span className="text-gray-300">|</span>
               <a href="#" className="text-sm text-gray-600 hover:text-blue-600">Support</a>
               <span className="text-gray-300">|</span>
-              <a href="#" className="text-sm text-gray-600 hover:text-blue-600">Privacy Policy</a>
+              <a href="https://dashboard.datahive.co.in/privacypolicy.html" className="text-sm text-gray-600 hover:text-blue-600">Privacy Policy</a>
             </div>
           </div>
         </footer>
