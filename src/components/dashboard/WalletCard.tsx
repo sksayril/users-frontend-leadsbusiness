@@ -28,7 +28,7 @@ const usdRechargeAmounts = [
 const WalletCard: React.FC = () => {
   const { user } = useAuth();
   const { wallet, subscription, rechargeWallet, verifyRechargePayment, refreshWallet, loading } = useWallet();
-  const [selectedAmount, setSelectedAmount] = useState<number>(250);
+  const [selectedAmount, setSelectedAmount] = useState<number>(2000);
   const [selectedCurrency, setSelectedCurrency] = useState<'INR' | 'USD'>('INR');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -44,7 +44,7 @@ const WalletCard: React.FC = () => {
 
   // When currency changes, set a default amount for that currency
   useEffect(() => {
-    const defaultAmount = selectedCurrency === 'INR' ? 250 : 10;
+    const defaultAmount = selectedCurrency === 'INR' ? 2000 : 10;
     setSelectedAmount(defaultAmount);
   }, [selectedCurrency]);
 

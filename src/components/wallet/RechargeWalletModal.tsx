@@ -9,18 +9,18 @@ const RAZORPAY_KEY_ID = "rzp_test_BDT2TegS4Ax6Vp"; // Should come from env
 
 // Recharge amounts in INR
 const inrRechargeAmounts = [
-  { value: 100, coins: 200, label: '₹100', featured: false },
-  { value: 250, coins: 500, label: '₹250', featured: true },
-  { value: 500, coins: 1000, label: '₹500', featured: false },
   { value: 1000, coins: 2000, label: '₹1000', featured: false },
+  { value: 2000, coins: 4000, label: '₹2000', featured: false },
+  { value: 4000, coins: 8000, label: '₹4000', featured: false },
+  { value: 8000, coins: 16000, label: '₹8000', featured: false },
 ];
 
 // Recharge amounts in USD
 const usdRechargeAmounts = [
-  { value: 5, coins: 200, label: '$5', featured: false },
-  { value: 10, coins: 500, label: '$10', featured: true },
-  { value: 20, coins: 1000, label: '$20', featured: false },
-  { value: 50, coins: 2500, label: '$50', featured: false },
+  { value: 50, coins: 2000, label: '$50', featured: false },
+  { value: 100, coins: 4000, label: '$100', featured: false },
+  { value: 200, coins: 8000, label: '$200', featured: false },
+  { value: 400, coins: 16000, label: '$400', featured: false },
 ];
 
 interface RechargeWalletModalProps {
@@ -41,7 +41,7 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { rechargeWallet, verifyRechargePayment, refreshWallet, loading } = useWallet();
-  const [selectedAmount, setSelectedAmount] = useState<number>(250);
+  const [selectedAmount, setSelectedAmount] = useState<number>(2000);
   const [selectedCurrency, setSelectedCurrency] = useState<'INR' | 'USD'>('INR');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -55,7 +55,7 @@ const RechargeWalletModal: React.FC<RechargeWalletModalProps> = ({
 
   // When currency changes, set a default amount for that currency
   useEffect(() => {
-    const defaultAmount = selectedCurrency === 'INR' ? 250 : 10;
+    const defaultAmount = selectedCurrency === 'INR' ? 2000 : 10;
     setSelectedAmount(defaultAmount);
   }, [selectedCurrency]);
 
