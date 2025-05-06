@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
-const API_BASE_URL = 'https://api.datahive.co.in/api';
+const API_BASE_URL = 'https://7cvccltb-3600.inc1.devtunnels.ms/api';
 
 // Create an Axios instance with default configuration
 const api = axios.create({
