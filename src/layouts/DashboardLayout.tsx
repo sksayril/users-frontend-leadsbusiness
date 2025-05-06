@@ -165,7 +165,7 @@ const DashboardLayout: React.FC = () => {
         <footer className="border-t border-gray-200 py-4 px-6 bg-white mt-auto">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
             <div className="mb-3 sm:mb-0">
-              <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} BusinessPro. All rights reserved.</p>
+              <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} Datahiv. All rights reserved.</p>
             </div>
             <div className="flex items-center space-x-4">
               <a href="mailto:info.cripcocode@gmail.com" className="text-sm text-gray-600 hover:text-blue-600 flex items-center">
@@ -409,7 +409,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       <div className="flex items-center py-6 px-4 border-b border-white/10">
         <div className="flex items-center">
           <div className="bg-white rounded-lg p-1.5 shadow-lg">
-            <Briefcase size={26} className="text-primary-600" />
+          <img src="/logo2.jpg" alt="Logo" className="w-12 h-12 text-primary-600" />
+
           </div>
           {!minimized && (
             <motion.h1 
@@ -418,7 +419,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               transition={{ duration: 0.2 }}
               className="ml-3 text-xl font-bold text-white"
             >
-              BusinessPro
+              DataHive
             </motion.h1>
           )}
         </div>

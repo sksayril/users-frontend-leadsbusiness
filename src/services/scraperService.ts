@@ -224,11 +224,11 @@ const scraperService = {
             success: true,
             count: 5,
             results: [
-              { id: '6815a35e34fe85d3b215a505', keyword: 'lawyers in delhi', createdAt: new Date().toISOString(), count: 15 },
-              { id: '6815a35e34fe85d3b215a501', keyword: 'restaurants in mumbai', createdAt: new Date(Date.now() - 86400000).toISOString(), count: 18 },
-              { id: '6815a35e34fe85d3b215a502', keyword: 'hotels in bangalore', createdAt: new Date(Date.now() - 172800000).toISOString(), count: 12 },
-              { id: '6815a35e34fe85d3b215a503', keyword: 'accountants in chennai', createdAt: new Date(Date.now() - 259200000).toISOString(), count: 10 },
-              { id: '6815a35e34fe85d3b215a504', keyword: 'doctors in hyderabad', createdAt: new Date(Date.now() - 345600000).toISOString(), count: 20 }
+              { id: '6815a35e34fe85d3b215a505', keyword: 'DemoData in delhi', createdAt: new Date().toISOString(), count: 15 },
+              // { id: '6815a35e34fe85d3b215a501', keyword: 'restaurants in mumbai', createdAt: new Date(Date.now() - 86400000).toISOString(), count: 18 },
+              // { id: '6815a35e34fe85d3b215a502', keyword: 'hotels in bangalore', createdAt: new Date(Date.now() - 172800000).toISOString(), count: 12 },
+              // { id: '6815a35e34fe85d3b215a503', keyword: 'accountants in chennai', createdAt: new Date(Date.now() - 259200000).toISOString(), count: 10 },
+              // { id: '6815a35e34fe85d3b215a504', keyword: 'doctors in hyderabad', createdAt: new Date(Date.now() - 345600000).toISOString(), count: 20 }
             ]
           };
         } else {
