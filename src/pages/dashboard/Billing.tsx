@@ -6,7 +6,7 @@ import { CreditCard, Check, Sparkles, Briefcase, Users, Award, Brain, Zap, Star,
 import { motion } from 'framer-motion';
 import { differenceInDays } from 'date-fns';
 
-const RAZORPAY_KEY_ID = "rzp_test_BDT2TegS4Ax6Vp"; // Ideally this should be in an environment variable
+const RAZORPAY_KEY_ID = "rzp_live_ZIhLgmwBjbqzrF"; // Ideally this should be in an environment variable
 
 type PlanType = 'MONTHLY';
 

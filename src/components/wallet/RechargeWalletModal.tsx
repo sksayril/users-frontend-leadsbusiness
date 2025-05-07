@@ -5,10 +5,11 @@ import { useWallet } from '../../contexts/WalletContext';
 import { initRazorpayPayment, loadRazorpay, RazorpaySuccessResponse } from '../../utils/razorpay';
 import { useAuth } from '../../contexts/AuthContext';
 
-const RAZORPAY_KEY_ID = "rzp_test_BDT2TegS4Ax6Vp"; // Should come from env
+const RAZORPAY_KEY_ID = "rzp_live_ZIhLgmwBjbqzrF"; // Should come from env
 
 // Recharge amounts in INR
 const inrRechargeAmounts = [
+  { value: 10, coins: 20, label: '₹10', featured: false },
   { value: 1000, coins: 2000, label: '₹1000', featured: false },
   { value: 2000, coins: 4000, label: '₹2000', featured: false },
   { value: 4000, coins: 8000, label: '₹4000', featured: false },
