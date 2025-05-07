@@ -9,7 +9,7 @@ const RAZORPAY_KEY_ID = "rzp_live_ZIhLgmwBjbqzrF"; // Should come from env
 
 // Recharge amounts in INR
 const inrRechargeAmounts = [
-  { value: 10, coins: 20, label: '₹10', featured: false },
+  // { value: 10, coins: 20, label: '₹10', featured: false },
   { value: 1000, coins: 2000, label: '₹1000', featured: false },
   { value: 2000, coins: 4000, label: '₹2000', featured: false },
   { value: 4000, coins: 8000, label: '₹4000', featured: false },
