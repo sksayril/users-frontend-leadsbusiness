@@ -1185,11 +1185,11 @@ const CategorizedLeads: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-sm font-medium text-gray-900 flex items-center">
                 <FileText className="mr-2 text-gray-700" size={16} />
-                Bulk Export Options
+                Bulk Data Options
               </h3>
               
               <div className="flex flex-wrap gap-2">
-                <button
+                {/* <button
                   onClick={handleExportAllLeads}
                   disabled={exportLoading || filteredPurchasedLeads.length === 0}
                   className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1205,10 +1205,10 @@ const CategorizedLeads: React.FC = () => {
                       Export All Leads
                     </>
                   )}
-                </button>
+                </button> */}
                 
                 <div className="relative inline-block text-left">
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => document.getElementById('category-export-dropdown')?.classList.toggle('hidden')}
                     className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
@@ -1216,7 +1216,7 @@ const CategorizedLeads: React.FC = () => {
                     <Filter size={14} className="mr-1.5 text-gray-700" />
                     Export By Category
                     <ChevronDown size={14} className="ml-1.5 text-gray-500" />
-                  </button>
+                  </button> */}
                   <div 
                     id="category-export-dropdown"
                     className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 divide-y divide-gray-100"
@@ -1314,12 +1314,12 @@ const CategorizedLeads: React.FC = () => {
                 {/* Quick Category Filters */}
                 {Object.keys(purchasedLeadCategories).length > 0 && (
                   <div className="border-t border-gray-200 pt-4 mt-2">
-                    <div className="flex items-center mb-3">
+                    {/* <div className="flex items-center mb-3">
                       <FileSpreadsheet size={14} className="mr-2 text-gray-700" />
                       <h4 className="text-sm font-medium text-gray-700">Quick Export by Category</h4>
                     </div>
-                    
-                    <div className="flex flex-wrap gap-2">
+                     */}
+                    {/* <div className="flex flex-wrap gap-2">
                       {Object.entries(purchasedLeadCategories).map(([id, name]) => {
                         const categoryLeadsCount = purchasedLeads.filter(lead => {
                           const leadCategoryId = typeof lead.category === 'string' ? lead.category : lead.category._id;
@@ -1341,7 +1341,7 @@ const CategorizedLeads: React.FC = () => {
                           </button>
                         );
                       })}
-                    </div>
+                    </div> */}
                   </div>
                 )}
               </>
@@ -1363,14 +1363,14 @@ const CategorizedLeads: React.FC = () => {
                 </h2>
                 
                 <div className="flex items-center space-x-2">
-                  <button
+                  {/* <button
                     onClick={handleExportAllLeads}
                     disabled={exportLoading || filteredPurchasedLeads.length === 0}
                     className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download size={14} className="mr-1.5" />
                     Export Table
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
