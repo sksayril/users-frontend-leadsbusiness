@@ -87,6 +87,7 @@ const CategorizedLeads: React.FC = () => {
     hasNext: false,
     hasPrev: false
   });
+  const [availableLeadsPerPage, setAvailableLeadsPerPage] = useState<number>(10);
   const [purchasedLeads, setPurchasedLeads] = useState<PurchasedLead[]>([]);
   const [purchasedLeadsLoading, setPurchasedLeadsLoading] = useState(false);
   const [purchasedLeadsError, setPurchasedLeadsError] = useState<string | null>(null);
@@ -151,14 +152,14 @@ const CategorizedLeads: React.FC = () => {
       
       try {
         // Try fetching from API first
-        const data = await leadsService.getLeadsByCategory(categoryId, page);
+        const data = await leadsService.getLeadsByCategory(categoryId, page, availableLeadsPerPage);
         setCategoryLeads(data.leads);
         setPagination(data.pagination);
       } catch (err) {
         // If API fails, use fake data as fallback
         console.log('Using fake data as fallback');
         const categoryName = categories.find(c => c._id === categoryId)?.name || 'Unknown';
-        const fakeLeads = generateFakeLeadPreviews(10, categoryId, categoryName).map(lead => ({
+        const fakeLeads = generateFakeLeadPreviews(availableLeadsPerPage, categoryId, categoryName).map(lead => ({
           ...lead,
           isPurchased: Math.random() > 0.7, // Randomly mark some leads as purchased
           purchaseStatus: Math.random() > 0.7 ? 'Purchased by someone else' : 'Available'
@@ -167,9 +168,9 @@ const CategorizedLeads: React.FC = () => {
         setCategoryLeads(fakeLeads);
         setPagination({
           totalLeads: 20,
-          totalPages: 2,
+          totalPages: Math.ceil(20 / availableLeadsPerPage),
           currentPage: page,
-          hasNext: page < 2,
+          hasNext: page < Math.ceil(20 / availableLeadsPerPage),
           hasPrev: page > 1
         });
       }
@@ -747,40 +748,42 @@ const CategorizedLeads: React.FC = () => {
               </div>
               
               <div className="p-4">
-                {loading && categories.length === 0 ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin h-6 w-6 border-3 border-sky-500 border-t-transparent rounded-full mr-3"></div>
-                    <p className="text-gray-500 text-sm">Loading categories...</p>
-                  </div>
-                ) : categories.length === 0 ? (
-                  <div className="text-center py-6">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Layers className="text-gray-400" size={20} />
+                <div className="space-y-1">
+                  {loading && categories.length === 0 ? (
+                    <div className="flex justify-center py-4">
+                      <Loader className="animate-spin h-6 w-6 text-sky-500" />
                     </div>
-                    <p className="text-gray-500 text-sm">No categories available</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[calc(100vh-240px)] overflow-y-auto pr-1">
-                    {categories.map(category => (
-                      <div
-                        key={category._id}
-                        onClick={() => handleSelectCategory(category._id)}
-                        className={`
-                          border rounded-md p-3 cursor-pointer transition-all hover:shadow-sm
-                          ${selectedCategory === category._id 
-                            ? 'border-sky-500 bg-sky-50 shadow-sm' 
-                            : 'border-gray-200 hover:border-sky-300 hover:bg-sky-50/50'}
-                        `}
-                      >
-                        <h3 className="font-medium text-gray-900 flex items-center">
-                          <Building className="mr-1.5 text-sky-600 flex-shrink-0" size={14} />
-                          <span className="truncate">{category.name}</span>
-                        </h3>
-                        <p className="text-gray-500 text-xs mt-1 line-clamp-1">{category.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  ) : (
+                    <>
+                      {categories.map(category => (
+                        <button
+                          key={category._id}
+                          onClick={() => handleSelectCategory(category._id)}
+                          className={`w-full text-left pl-3 pr-2 py-2.5 text-sm rounded-md flex items-center justify-between ${
+                            selectedCategory === category._id
+                              ? 'bg-sky-100 text-sky-800 font-medium'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="flex items-center truncate">
+                            <span className="truncate">{category.name}</span>
+                          </div>
+                          {selectedCategory === category._id && (
+                            <ChevronRight size={16} className="text-sky-600 flex-shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                      
+                      {categories.length === 0 && !loading && (
+                        <div className="text-gray-500 text-sm text-center py-4">
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            No categories found
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -990,7 +993,7 @@ const CategorizedLeads: React.FC = () => {
                                                   <span className="text-gray-600">{expandedLeadDetails.customerContact}</span>
                                                 </div>
                                                 
-                    <div className="flex items-center">
+                                                <div className="flex items-center">
                                                   <Mail size={14} className="mr-1.5 text-gray-500" />
                                                   <a href={`mailto:${expandedLeadDetails.customerEmail}`} className="text-blue-600 hover:underline">
                                                     {expandedLeadDetails.customerEmail}
@@ -1006,6 +1009,26 @@ const CategorizedLeads: React.FC = () => {
                                               </div>
                                             </div>
                                           </div>
+                                          
+                                          <div className="flex justify-end space-x-2 mt-3">
+                                            <button 
+                                              onClick={() => handlePurchaseLead(lead._id)}
+                                              disabled={purchaseLoading === lead._id || lead.isPurchased}
+                                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                            >
+                                              {purchaseLoading === lead._id ? (
+                                                <>
+                                                  <Loader className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" />
+                                                  Processing
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <ShoppingCart size={14} className="mr-1.5" />
+                                                  Purchase for {renderCoinValue(lead.price)}
+                                                </>
+                                              )}
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
                                     </td>
@@ -1019,13 +1042,21 @@ const CategorizedLeads: React.FC = () => {
                       
                       {/* Pagination Controls */}
                       {pagination.totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-xs text-gray-700">
-                            Showing <span className="font-medium">{(pagination.currentPage - 1) * 10 + 1}</span> to <span className="font-medium">
+                        <div className="flex items-center justify-between mt-4 border-t border-gray-200 pt-4">
+                          <div className="flex items-center text-sm text-gray-700">
+                            <span className="font-medium">
+                              {(pagination.currentPage - 1) * 10 + 1}
+                            </span>
+                            <span className="mx-1">-</span>
+                            <span className="font-medium">
                               {Math.min(pagination.currentPage * 10, pagination.totalLeads)}
-                            </span> of <span className="font-medium">{pagination.totalLeads}</span> leads
+                            </span>
+                            <span className="mx-1">of</span>
+                            <span className="font-medium">{pagination.totalLeads}</span>
+                            <span className="ml-1">leads</span>
                           </div>
-                          <div className="flex items-center space-x-1">
+                          
+                          <div className="flex space-x-1">
                             <button
                               onClick={() => handlePageChange(pagination.currentPage - 1)}
                               disabled={!pagination.hasPrev}
@@ -1033,19 +1064,51 @@ const CategorizedLeads: React.FC = () => {
                             >
                               <ChevronLeft size={14} />
                             </button>
-                            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(page => (
-                              <button
-                                key={page}
-                                onClick={() => handlePageChange(page)}
-                                className={`px-2 py-1 border rounded text-xs font-medium ${
-                                  page === pagination.currentPage
-                                    ? 'bg-sky-600 text-white border-sky-600'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            ))}
+                            
+                            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                              .filter(pageNum => 
+                                pageNum === 1 || 
+                                pageNum === pagination.totalPages || 
+                                (pageNum >= pagination.currentPage - 1 && 
+                                 pageNum <= pagination.currentPage + 1)
+                              )
+                              .map((pageNum, index, array) => {
+                                // Add ellipsis if there are gaps
+                                if (index > 0 && pageNum > array[index - 1] + 1) {
+                                  return (
+                                    <React.Fragment key={`ellipsis-${pageNum}`}>
+                                      <span className="px-2 py-1 text-xs text-gray-500">...</span>
+                                      <button
+                                        key={pageNum}
+                                        onClick={() => handlePageChange(pageNum)}
+                                        className={`px-2 py-1 border rounded text-xs font-medium ${
+                                          pageNum === pagination.currentPage
+                                            ? 'bg-sky-600 text-white border-sky-600'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {pageNum}
+                                      </button>
+                                    </React.Fragment>
+                                  );
+                                }
+                                
+                                return (
+                                  <button
+                                    key={pageNum}
+                                    onClick={() => handlePageChange(pageNum)}
+                                    className={`px-2 py-1 border rounded text-xs font-medium ${
+                                      pageNum === pagination.currentPage
+                                        ? 'bg-sky-600 text-white border-sky-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                );
+                              })
+                            }
+                            
                             <button
                               onClick={() => handlePageChange(pagination.currentPage + 1)}
                               disabled={!pagination.hasNext}
@@ -1053,6 +1116,30 @@ const CategorizedLeads: React.FC = () => {
                             >
                               <ChevronRight size={14} />
                             </button>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-600">Show:</span>
+                            <select
+                              value={availableLeadsPerPage}
+                              onChange={(e) => {
+                                const newPerPage = Number(e.target.value);
+                                setAvailableLeadsPerPage(newPerPage);
+                                setPagination(prev => ({
+                                  ...prev,
+                                  currentPage: 1 // Reset to first page when changing items per page
+                                }));
+                                if (selectedCategory) {
+                                  fetchLeadsByCategory(selectedCategory, 1);
+                                }
+                              }}
+                              className="border border-gray-300 rounded text-xs py-1 px-2 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                            >
+                              <option value={5}>5</option>
+                              <option value={10}>10</option>
+                              <option value={25}>25</option>
+                              <option value={50}>50</option>
+                            </select>
                           </div>
                         </div>
                       )}

@@ -47,9 +47,9 @@ const leadsService = {
   },
   
   // Get Leads Preview by Category with pagination
-  getLeadsByCategory: async (categoryId: string, page: number = 1): Promise<{ leads: LeadPreview[], pagination: PaginationData }> => {
+  getLeadsByCategory: async (categoryId: string, page: number = 1, itemsPerPage: number = 10): Promise<{ leads: LeadPreview[], pagination: PaginationData }> => {
     try {
-      const response = await api.get(`/leads/preview/${categoryId}?page=${page}`);
+      const response = await api.get(`/leads/preview/${categoryId}?page=${page}&itemsPerPage=${itemsPerPage}`);
       return response.data;
     } catch (error: any) {
       if (error.response && error.response.data.subscriptionRequired) {
